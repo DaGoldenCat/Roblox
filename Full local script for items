@@ -1,0 +1,375 @@
+local space = game:GetService("Workspace")
+local Input = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local Replicated = game:GetService("ReplicatedStorage")
+local run = game:GetService("RunService")
+local Collection = game:GetService("CollectionService")
+local Tween = game:GetService("TweenService")
+
+local plr = Players.LocalPlayer
+local toolFolder = space:WaitForChild("Tools")
+local mouse = plr:GetMouse()
+local camera = space.CurrentCamera
+local toolInfo = require(toolFolder.ToolInfo)
+local pressedKey = Replicated.PressedKey
+local playerStuff = plr:WaitForChild("PlayerGui"):WaitForChild("PlayerStuff")
+
+plr.CameraMaxZoomDistance = .5 --Changing players camera for 1st person
+camera.FieldOfView = 100
+Input.MouseIconEnabled = false
+
+local holdingRight, holdingLeft, inv1, inv2, inv3, inv4, inv5, inv6, running, crouch, firing, ctrl, alive, stamina, crosshair,
+char, human, stamBar, hpBar, animator, leftIdle, rightIdle, crouchAnim, crouchedGoal, uncrouchedGoal, info, crouchedTween,
+uncrouchedTween, w,a,s,d,up,down
+
+local function mouseIgnore()
+	for i,v in pairs(Collection:GetTagged("Ignore")) do
+		mouse.TargetFilter = v
+	end
+end
+
+local function initCharacter() --Initialize variables
+	holdingRight, holdingLeft, inv1, inv2, inv3, inv4, inv5, inv6 = nil, nil, nil, nil, nil, nil, nil, nil
+	running, crouch, firing, ctrl, alive = false, false, false, false, true
+	w,a,s,d, up, down = false, false, false, false, false, false
+	stamina = 100
+	char = plr.Character
+	human = char.Humanoid
+	animator = human.Animator
+	human.CameraOffset = Vector3.new(0,0,-1)
+	
+	--Animations
+	leftIdle = Instance.new("Animation") --Holding up right arm
+	leftIdle.AnimationId = "rbxassetid://134627533854049"
+	leftIdle = animator:LoadAnimation(leftIdle)
+	
+	rightIdle = Instance.new("Animation") --Holding up left arm
+	rightIdle.AnimationId = "rbxassetid://126402276131819"
+	rightIdle = animator:LoadAnimation(rightIdle)
+	
+	crouchAnim = Instance.new("Animation") --Crouching
+	crouchAnim.AnimationId = "rbxassetid://110721439584315"
+	crouchAnim = animator:LoadAnimation(crouchAnim)
+	
+	--Tweens
+	crouchedGoal = {CameraOffset = Vector3.new(0,-1.5,-2)}
+	uncrouchedGoal = {CameraOffset = Vector3.new(0,0,-1)}
+	info = TweenInfo.new(.2)
+	crouchedTween = Tween:Create(human, info, crouchedGoal)
+	uncrouchedTween = Tween:Create(human, info, uncrouchedGoal)
+	
+	--Stamina and stuff
+	local bars = playerStuff:WaitForChild("Bars")
+	stamBar = bars:WaitForChild("Stamina"):WaitForChild("StaminaBar")
+	hpBar = bars:WaitForChild("Health"):WaitForChild("HealthBar")
+	crosshair = playerStuff:WaitForChild("Crosshair")
+	
+	for _,v in pairs(char:GetChildren()) do
+		if v:IsA("BasePart") and v.Name ~= "Head" then
+			v:GetPropertyChangedSignal("LocalTransparencyModifier"):Connect(function()
+				v.LocalTransparencyModifier = v.Transparency
+			end)
+			v.LocalTransparencyModifier = v.Transparency
+		elseif v:IsA("Accessory") then
+			v = v.Handle
+			v:GetPropertyChangedSignal("LocalTransparencyModifier"):Connect(function()
+				v.LocalTransparencyModifier = v.Transparency
+			end)
+			v.LocalTransparencyModifier = v.Transparency
+		end
+	end
+end
+
+if plr.Character ~= nil or plr.CharacterAdded:Wait() then
+	initCharacter()
+	human.Died:Connect(function()
+		alive, firing, crouch = false, false, false
+	end)
+end
+
+local function shoot()
+	local angle = math.random() * 2 * math.pi
+	local random = math.random() * crosshair.AbsoluteSize.X / 2
+	local x = random * math.cos(angle)
+	local y = random * math.sin(angle)
+	local randomPoint = Vector2.new(random * math.cos(angle), random * math.sin(angle))
+	local crosshairPos = crosshair.AbsolutePosition + crosshair.AbsoluteSize / 2
+	local target = crosshairPos + randomPoint
+	local ray = camera:ScreenPointToRay(target.X, target.Y)
+	local cameraPos = camera.CFrame.Position
+	local direction = (ray.Origin - cameraPos).Unit
+	local raycast = space:Raycast(cameraPos, direction * 1024)
+	pressedKey:FireServer(holdingRight, raycast.Position, "Left")
+end
+
+mouse.Button1Down:Connect(function()
+	if holdingRight ~= nil and alive then
+		firing = true
+		if table.find(toolInfo.guns, holdingRight.Name) ~= nil then
+			shoot()
+			if holdingRight.Name == "Shotgun" then
+				for i = 0,30 do
+					shoot()
+					print(i)
+				end
+			elseif holdingRight.Name == "Snub" then
+				
+			end
+			local goal = {CFrame = camera.CFrame * CFrame.Angles(toolInfo.gunRecoil[holdingRight.Name], 0, 0)}
+			local tweenInfo = TweenInfo.new(.08, Enum.EasingStyle.Circular)
+			local tween = Tween:Create(camera, tweenInfo, goal)
+			tween:Play()
+		end
+	end
+end)
+
+mouse.Button2Down:Connect(function()
+	if alive then
+		if not ctrl then
+			rightIdle:Play()
+		else
+			leftIdle:Play()
+		end
+	end
+end)
+
+mouse.Button1Up:Connect(function()
+	firing = false
+	local target = mouse.Target
+	local hit = mouse.Hit.Position
+	if holdingRight == nil and target ~= nil then --If they have an item
+		if target.Parent == toolFolder and (mouse.Target.Position - plr.Character.HumanoidRootPart.Position).Magnitude <= 10 then
+			--If they're clicking an item and they're close enough
+			pressedKey:FireServer(nil, target, "Left")
+			holdingRight = target
+			target:GetPropertyChangedSignal("LocalTransparencyModifier"):Connect(function()
+				target.LocalTransparencyModifier = target.Transparency
+			end)
+			if table.find(toolInfo.guns, holdingRight.Name) ~= nil then
+				rightIdle:Play()
+			end
+		end
+	end
+end)
+
+mouse.Button2Up:Connect(function()
+	if holdingRight ~= nil then
+		if table.find(toolInfo.guns, holdingRight.Name) == nil then
+			rightIdle:Stop()
+		end
+	else
+		rightIdle:Stop()
+	end
+	if holdingLeft ~= nil then
+		if table.find(toolInfo.guns, holdingLeft.Name) == nil then
+			leftIdle:Stop()
+		end
+	else
+		leftIdle:Stop()
+	end
+end)
+	
+Input.InputBegan:Connect(function(input, processed)
+	if processed or not alive then return end
+	
+	if input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.RightShift and stamina > 0 then
+		if not crouch then
+			human.WalkSpeed = 24
+			running = true
+		end
+	elseif input.KeyCode == Enum.KeyCode.W then
+		w = true
+	elseif input.KeyCode == Enum.KeyCode.A then
+		a = true
+	elseif input.KeyCode == Enum.KeyCode.S then
+		s = true
+	elseif input.KeyCode == Enum.KeyCode.D then
+		d = true
+	elseif input.KeyCode == Enum.KeyCode.Up then
+		up = true
+	elseif input.KeyCode == Enum.KeyCode.Down then
+		down = true
+	elseif input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.RightControl then
+		ctrl = true
+	end
+end)
+
+Input.InputEnded:Connect(function(input, processed)
+	if processed or not alive then return end
+	
+	if input.KeyCode == Enum.KeyCode.Tab then
+		--pressedKey:FireServer(holdingRight, holdingLeft, "Tab")
+	elseif input.KeyCode == Enum.KeyCode.F then
+		pressedKey:FireServer(holdingRight, holdingLeft, "F")
+		local temp = holdingRight
+		holdingRight = holdingLeft
+		holdingLeft = temp
+		if holdingRight ~= nil then
+			if table.find(toolInfo.guns, holdingRight.Name) ~= nil then
+				rightIdle:Play()
+			else
+				rightIdle:Stop()
+			end
+		else
+			rightIdle:Stop()
+		end
+		if holdingLeft ~= nil then
+			if table.find(toolInfo.guns, holdingLeft.Name) ~= nil then
+				leftIdle:Play()
+			else
+				leftIdle:Stop()
+			end
+		else
+			leftIdle:Stop()
+		end
+	elseif input.KeyCode == Enum.KeyCode.Backspace then
+		if holdingRight ~= nil then
+			pressedKey:FireServer(holdingRight, nil, "Back")
+			holdingRight = nil
+			rightIdle:Stop()
+		elseif holdingLeft ~= nil then
+			pressedKey:FireServer(holdingLeft, nil, "Back")
+			holdingLeft = nil
+			leftIdle:Stop()
+		end
+	elseif input.KeyCode == Enum.KeyCode.C then
+		if crouch then
+			crouchAnim:Stop()
+			uncrouchedTween:Play()
+			if Input:IsKeyDown(Enum.KeyCode.LeftShift) or Input:IsKeyDown(Enum.KeyCode.RightShift) then
+				human.WalkSpeed = 24
+				running = true
+			else
+				human.WalkSpeed = 16
+			end
+			crouch = false
+		else
+			crouchAnim:Play()
+			crouchAnim:Play()
+			crouchedTween:Play()
+			human.WalkSpeed = 8
+			crouch = true
+			running = false
+		end
+	elseif input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.RightShift then
+		running = false
+		if not crouch then
+			human.WalkSpeed = 16
+		end
+	elseif input.KeyCode == Enum.KeyCode.W then
+		w = false
+	elseif input.KeyCode == Enum.KeyCode.A then
+		a = false
+	elseif input.KeyCode == Enum.KeyCode.S then
+		s = false
+	elseif input.KeyCode == Enum.KeyCode.D then
+		d = false
+	elseif input.KeyCode == Enum.KeyCode.Up then
+		up = false
+	elseif input.KeyCode == Enum.KeyCode.Down then
+		down = false
+	elseif input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.RightControl then
+		ctrl = false
+	elseif input.KeyCode == Enum.KeyCode.One then
+		pressedKey:FireServer(holdingRight, inv1, 1)
+		local temp = inv1
+		inv1 = holdingRight
+		holdingRight = temp
+	elseif input.KeyCode == Enum.KeyCode.Two then
+		pressedKey:FireServer(holdingRight, inv2, 2)
+		local temp = inv2
+		inv2 = holdingRight
+		holdingRight = temp
+	elseif input.KeyCode == Enum.KeyCode.Three then
+		pressedKey:FireServer(holdingRight, inv3, 3)
+		local temp = inv3
+		inv3 = holdingRight
+		holdingRight = temp
+	elseif input.KeyCode == Enum.KeyCode.Four then
+		pressedKey:FireServer(holdingRight, inv4, 4)
+		local temp = inv4
+		inv4 = holdingRight
+		holdingRight = temp
+	elseif input.KeyCode == Enum.KeyCode.Five then
+		pressedKey:FireServer(holdingRight, inv5, 5)
+		local temp = inv5
+		inv5 = holdingRight
+		holdingRight = temp
+	elseif input.KeyCode == Enum.KeyCode.Six then
+		pressedKey:FireServer(holdingRight, inv6, 6)
+		local temp = inv6
+		inv6 = holdingRight
+		holdingRight = temp
+	end
+end)
+
+human.HealthChanged:Connect(function(health)
+	local goal = {Size = UDim2.fromScale(human.Health / 100, 1)}
+	local tweenInfo = TweenInfo.new(.2)
+	local tween = Tween:Create(hpBar, tweenInfo, goal)
+	tween:Play()
+end)
+
+local lastRun = 0
+local lastRest = 0
+
+local function addStamina(var)
+	stamina += 1
+	local goal = {Size = stamBar.Size + UDim2.fromScale(.01, 0)}
+	local tweenInfo = TweenInfo.new(var, Enum.EasingStyle.Linear)
+	local tween = Tween:Create(stamBar, tweenInfo, goal)
+	tween:Play()
+	lastRest = 0
+end
+
+local function loseStamina()
+	stamina -= 1
+	local goal = {Size = stamBar.Size + UDim2.fromScale(-.01, 0)}
+	local tweenInfo = TweenInfo.new(.08, Enum.EasingStyle.Linear)
+	local tween = Tween:Create(stamBar, tweenInfo, goal)
+	tween:Play()
+	lastRun = 0
+end
+
+run.Heartbeat:Connect(function(delta)
+	if stamina == nil then return end
+	lastRun += delta
+	lastRest += delta
+	if running and (w or a or s or d or up or down) then
+		if lastRun > .08  and stamina > 0 and not crouch then
+			loseStamina()
+			if stamina == 0 then
+				human.WalkSpeed = 16
+				running = false
+			end
+		end
+	elseif lastRun > 3 and stamina < 100 then
+		if crouch and lastRest > .03 and not (w or a or s or d or up or down) then
+			addStamina(.03)
+		elseif crouch and lastRest > .06 then
+			addStamina(.06)
+		elseif lastRest > .04 and not (w or a or s or d or up or down) then
+			addStamina(.04)
+		elseif lastRest > .07 then
+			addStamina(.07)
+		end
+	end
+
+	local speed = char.HumanoidRootPart.Velocity.Magnitude
+	local size
+	if holdingRight then
+		if table.find(toolInfo.guns, holdingRight.Name) ~= nil then
+			local scale = math.clamp(speed / 30, 0, 1)
+			local min = toolInfo.crosshair[holdingRight.Name]
+			size = min + toolInfo.movingCroshair[holdingRight.Name] * scale
+		else
+			size = 0
+		end
+	else
+		size = 0
+	end
+	
+	local current = crosshair.Size
+	crosshair.Size = UDim2.fromOffset(current.X.Offset + (size - current.X.Offset) * 0.1, current.Y.Offset + (size - current.Y.Offset) * 0.1)
+	crosshair.Position = UDim2.new(.5, -crosshair.Size.X.Offset / 2, .5, -crosshair.Size.Y.Offset / 2)
+end)
