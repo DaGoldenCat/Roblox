@@ -18,6 +18,7 @@
 ## Menu & teleport to place
 ### Clones a GUI to the player and destroys the current gui in the middle of a transition
 ## Teams, Timer and Win condition
+![Running App](https://github.com/DaGoldenCat/Roblox/blob/1fb712df0cb9c5c549e357553ace979971cf3dce/Pictures/Teams%20%26%20Timer.png?raw=true)
 ### Checks if at least 2 teams are valid, and updates the timer if correct. At the end of the timer or after 2 teams are empty, it checks the team base and awards if conditions are met
 ## Crosshair, Bullet spread, and Recoil
 ![Running App](https://github.com/DaGoldenCat/Roblox/blob/74c02957c7e4735221dfa3c4a5d6b0e12405fd27/Pictures/Shotgun%20Spread.png?raw=true)
