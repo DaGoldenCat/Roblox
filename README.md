@@ -28,7 +28,7 @@
 ![Running App](https://github.com/DaGoldenCat/Roblox/blob/b0b10b67397df6d01c5c69ed74084570a48b5dbd/Pictures/Ragdoll.png?raw=true)
 ### Makes a for loop to changes the character's Motor6D's for BallSockets to create a ragdoll
 [Script Link](https://github.com/DaGoldenCat/Roblox/blob/b9ce07375bf0498d6049d33883aa5a082271d536/Source%20code/Teams%20and%20Ragdoll)
-## Crosshair, Bullet spread, and Recoil
+## Crosshair, Bullet spread, and Recoil (Shotgun ↓)
 ![Running App](https://github.com/DaGoldenCat/Roblox/blob/74c02957c7e4735221dfa3c4a5d6b0e12405fd27/Pictures/Shotgun%20Spread.png?raw=true)
 ### Crosshair - Every frame the code keeps track of how fast the player moves, and makes a tween for how fast the player moves and what type the gun is
 ### Bullet Spread - The code takes a random point in the circle of the crosshair and raytraces it to where it hit in the world and sends the point to the server for another raytrace from the gun to the point [Script Link](https://github.com/DaGoldenCat/Roblox/blob/b9ce07375bf0498d6049d33883aa5a082271d536/Source%20code/Item%20local%20script)
