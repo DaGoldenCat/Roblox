@@ -9,5 +9,10 @@
 ### Luau, Python, Java, C++, JS & HTML
 # Work
 ## I alone have written all of the programs below, no code has been directly copied from another person
-## Conversion Application
+## Player Stats
+![Running App](https://github.com/DaGoldenCat/Roblox/blob/2df32bb13fc6b4884561f5b54f73f3cf9ebbaa1c/Pictures/Player%20Stats.png?raw=true)
+## Crosshair, Bullet spread, and Recoil
 ![Running App](https://github.com/DaGoldenCat/Roblox/blob/74c02957c7e4735221dfa3c4a5d6b0e12405fd27/Pictures/Shotgun%20Spread.png?raw=true)
+### Crosshair - Every frame the code keeps track of how fast the player moves, and makes a tween for how fast the player moves and what type the gun is.
+### Bullet Spread - The code takes a random point in the circle of the crosshair and raytraces it to where it hit in the world and sends the point to the server for another raytrace from the gun to the point.
+### Recoil - Makes a tween for the radians from the type of gun and changes the player's camera
