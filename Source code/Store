@@ -1,0 +1,32 @@
+--Made by DaGoldenCat, server script
+local Replicated = game:GetService("ReplicatedStorage")
+local Storage = game:GetService("ServerStorage")
+local gui = Storage.ScreenGui
+
+game.Players.PlayerAdded:Connect(function(plr)
+	local store = gui:clone()
+	store.Parent = plr.PlayerGui
+end)	
+
+Replicated.Open.OnServerEvent:Connect(function(plr)
+	local store = Storage.Store:Clone()
+	store.Parent = plr.PlayerGui
+end)
+
+Replicated.Close.OnServerEvent:Connect(function(plr)
+	local store = gui:clone()
+	store.Parent = plr.PlayerGui
+end)
+
+Replicated.Item.OnServerInvoke = function(plr, item, price)
+	local thing = Storage:FindFirstChild(item)
+	local int = plr.leaderstats.int
+	if int.Value >= price then
+		int.Value -= price
+		local clone = Storage:FindFirstChild(item):Clone()
+		clone.Parent = plr.Backpack
+		return true
+	else
+		return false
+	end
+end
