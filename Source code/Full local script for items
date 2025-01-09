@@ -1,4 +1,4 @@
---Written my DaGoldenCat
+--Written by DaGoldenCat, Server Script
 local space = game:GetService("Workspace")
 local Input = game:GetService("UserInputService")
 local Players = game:GetService("Players")
