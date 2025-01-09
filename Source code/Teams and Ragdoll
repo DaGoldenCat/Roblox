@@ -1,4 +1,4 @@
---Made by DaGoldenCat, server script
+--Written by DaGoldenCat, server script
 local Players = game:GetService("Players")
 local Teams = game:GetService("Teams")
 local Storage = game:GetService("ServerStorage")
