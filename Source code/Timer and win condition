@@ -1,0 +1,112 @@
+--Made by DaGoldenCat, server script
+local space = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local Teams = game:GetService("Teams")
+local Replicated = game:GetService("ReplicatedStorage")
+local Storage = game:GetService("ServerStorage")
+local Lighting = game:GetService("Lighting")
+
+local dossier = space:WaitForChild("Tools"):WaitForChild("Dossier")
+local zones = space:WaitForChild("Zones")
+local timer = Replicated.Time
+local soundFolder = Storage.Sounds
+local soundManager = require(soundFolder.SoundManager)
+local music = Storage.Sounds.Equip
+
+while true do
+	while Replicated.TeamSelect.Value do --Fires every second while players are at Team Select
+		local readyTeams = 0
+		if #Teams.Red:GetPlayers() > 0 then
+			readyTeams += 1
+		end
+		if #Teams.Blue:GetPlayers() > 0 then
+			readyTeams += 1
+		end
+		if #Teams.Black:GetPlayers() > 0 then
+			readyTeams += 1
+		end
+		if readyTeams > 0 then
+			if timer.Value == 30 and not music.IsPlaying then
+				soundManager.play(music)
+				timer.Value -= 1
+			else
+				timer.Value -= 1
+				if timer.Value == 0 then 
+					Replicated.TeamSelect.Value = false
+					Replicated.Setup.Value = true
+					timer.Value = 10
+					Replicated.GameStart:FireAllClients() --Tells server the game is starting
+					for _,v in pairs(Teams.Red:GetPlayers()) do --Loads everyone that is in a team
+						v:LoadCharacter()
+					end
+					for _,v in pairs(Teams.Blue:GetPlayers()) do
+						v:LoadCharacter()
+					end
+					for _,v in pairs(Teams.Black:GetPlayers()) do
+						v:LoadCharacter()
+					end
+					if music.TimePosition > 3 then
+						soundManager.stop(music)
+					else
+						music.Looped = false
+					end
+				end
+			end
+		else
+			if timer.Value == 30 and not music.IsPlaying then
+				soundManager.play(music)
+			end
+			timer.Value = 30 --Resets timer if the teams are not ready
+		end
+		task.wait(1)
+	end
+
+	while not Replicated.TeamSelect.Value and Replicated.Setup.Value do
+		timer.Value -= 1
+		Lighting.ClockTime += 1/60
+		if timer.Value == 0 then
+			Replicated.Setup.Value = false
+			timer.Value = 600
+			Replicated.SetupEnd:FireAllClients()
+		end
+		task.wait(1)
+	end
+
+	while not Replicated.TeamSelect.Value and not Replicated.Setup.Value do
+		if timer.Value == 0 then
+			Replicated.GameEnd:FireAllClients()
+			Replicated.TeamSelect.Value = true
+			for _,v in pairs(Players:GetPlayers()) do
+				local clone = Storage.TeamSelect:Clone()
+				clone.Parent = v.PlayerGui
+				for _,j in pairs(v.Character:GetChildren()) do
+					if j:IsA("Part") then
+						if j.Name ~= "HumanoidRootPart" then
+							j.Parent = space.Tools
+						end
+					end
+				end
+				v.Character:Destroy()
+			end
+			timer.Value = 1
+			if Replicated.Day.Value == 5 then
+				Replicated.Day.Value = 1
+			else
+				Replicated.Day.Value += 1
+			end
+			for i,v in pairs(zones:GetChildren()) do
+				for i,v in pairs(space:GetPartBoundsInBox(v.CFrame, v.Size)) do
+					if v.Name == "Dossier" then
+						print("yay!!!!")
+					end
+				end
+			end
+			music:Play()
+			music.Looped = true
+		else
+			timer.Value -= 1
+			Lighting.ClockTime += 1/60
+		end
+		task.wait(1)
+	end
+end
