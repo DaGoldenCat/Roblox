@@ -1,4 +1,4 @@
---Written by DaGoldenCat
+--Written by DaGoldenCat, server script
 local Market = game:GetService("MarketplaceService")
 local DataStore = game:GetService("DataStoreService")
 local Storage = game:GetService("ServerStorage")
