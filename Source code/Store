@@ -1,4 +1,4 @@
---Made by DaGoldenCat, server script
+--Written by DaGoldenCat, server script
 local Replicated = game:GetService("ReplicatedStorage")
 local Storage = game:GetService("ServerStorage")
 local gui = Storage.ScreenGui
