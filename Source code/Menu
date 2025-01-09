@@ -1,0 +1,43 @@
+--Written by DaGoldenCat, local script
+local gui = script.Parent
+local frame = gui:WaitForChild("Frame")
+local soloB = frame:WaitForChild("SoloButton")
+local soloI = frame:WaitForChild("SoloImage")
+local coopB = frame:WaitForChild("CoopButton")
+local coopI = frame:WaitForChild("CoopImage")
+local vsB = frame:WaitForChild("VsButton")
+local vsI = frame:WaitForChild("VsImage")
+local back = frame:WaitForChild("BackButton")
+local rs = game:GetService("ReplicatedStorage")
+local event = rs:WaitForChild("GuiEvent")
+local tp = rs:WaitForChild("TeleportEvent")
+
+local teleport = function(place)
+	tp:FireServer(place)
+end
+
+soloB.MouseButton1Click:Connect(function()
+	tp:FireServer("Solo")
+end)
+soloI.MouseButton1Click:Connect(function()
+	tp:FireServer("Solo")
+end)
+coopB.MouseButton1Click:Connect(function()
+	tp:FireServer("Coop")
+end)
+coopI.MouseButton1Click:Connect(function()
+	tp:FireServer("Coop")
+end)
+vsB.MouseButton1Click:Connect(function()
+	tp:FireServer("Vs")
+end)
+vsI.MouseButton1Click:Connect(function()
+	tp:FireServer("Vs")
+end)
+
+back.MouseButton1Click:Connect(function()
+	frame.Interactable = false
+	event:FireServer("StartGUI")
+	task.wait(.5)
+	gui:Destroy()
+end)
