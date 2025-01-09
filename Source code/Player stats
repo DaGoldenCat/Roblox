@@ -1,0 +1,64 @@
+local Market = game:GetService("MarketplaceService")
+local DataStore = game:GetService("DataStoreService")
+local Storage = game:GetService("ServerStorage")
+local Players = game:GetService("Players")
+local data = DataStore:GetOrderedDataStore("int")
+
+Players.PlayerAdded:Connect(function(plr)
+	local id = plr.UserId
+	local leaderstats = Instance.new("Folder")
+	leaderstats.Parent = plr
+	leaderstats.Name = "leaderstats"
+	local int = Instance.new("IntValue")
+	int.Parent = leaderstats
+	int.Name = "int"
+	local succ, err = pcall(function()
+		plr.CharacterAdded:Wait()
+		local clone = Storage.Saved:Clone()
+		clone.Parent = plr.PlayerGui
+		int.Value = data:GetAsync(id)
+	end)
+	if not succ then
+		warn(err)
+		int.Value = 0
+	end
+	local bool = Instance.new("BoolValue")
+	bool.Parent = plr
+	bool.Name = "bool"
+	bool.Value = false
+	task.spawn(function()
+		while true do
+			data:SetAsync(id, int.Value)
+			task.wait(1)
+		end
+	end)
+	local id = 894299091
+	local pass = Market:UserOwnsGamePassAsync(plr.UserId, id)
+	Market.PromptGamePassPurchaseFinished:Connect(function(buyer, id, Purchased)
+		if plr == buyer and Purchased then
+			pass = true
+		end
+	end)
+	while true do
+		if Players:FindFirstChild(plr.Name) then
+			if pass then
+				int.Value += 1
+				task.wait(.3)
+			else
+				int.Value += 1
+				task.wait(.1)
+			end
+		end
+		task.wait(.3)
+	end
+end)
+
+game.Players.PlayerRemoving:Connect(function(plr)
+	local id = plr.UserId
+	local succ, err = pcall(function()
+		data:SetAsync(id, plr.leaderstats.int.Value)
+	end)
+	if not succ then
+		warn(err)
+	end
+end)
