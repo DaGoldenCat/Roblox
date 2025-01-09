@@ -1,0 +1,71 @@
+local Players = game:GetService("Players")
+local Teams = game:GetService("Teams")
+local Storage = game:GetService("ServerStorage")
+local Replicated = game:GetService("ReplicatedStorage")
+local blackSuit = Storage.BlackSuit
+Players.CharacterAutoLoads = false --Disables Players from loading
+
+Players.PlayerAdded:Connect(function(plr)
+	local clone = game:GetService("StarterGui"):WaitForChild("Data"):Clone() --Manually adds timer because characters arent loaded in
+	clone.Parent = plr.PlayerGui
+	if Replicated.TeamSelect.Value then --Adds team selection gui if TeamSelect is true
+		local clone = Storage.TeamSelect:Clone()
+		clone.Parent = plr.PlayerGui
+	end
+	
+	
+	plr.CharacterAdded:Connect(function(char)
+		local human = char:WaitForChild("Humanoid")
+		local leftGrip = Instance.new("Weld", char.LeftHand) --Adds weld for left hand use
+		leftGrip.Name = "LeftGrip"
+		leftGrip.Part0 = char.LeftHand
+		human.BreakJointsOnDeath = false --Disables characters exploding on death
+		
+		if plr.Team == Teams.Black then --Gives players their suits
+			local clone = blackSuit:Clone()
+			clone.Parent = char
+			Storage.BlackLeft.Value += 1
+		elseif plr.Team == Teams.Blue then
+			Storage.BlueLeft.Value += 1
+		elseif plr.Team == Teams.Red then
+			Storage.RedLeft.Value += 1
+		end
+		human.Died:Connect(function()
+			for i,v in pairs(char:GetDescendants()) do --Adds ragdoll on death
+				if v:isA("Motor6D") then
+					local part0 = v.Part0
+					local part1 = v.Part1
+					local attach0 = Instance.new("Attachment", part0)
+					attach0.CFrame = v.C0
+					local attach1 = Instance.new("Attachment", part1)
+					attach1.CFrame = v.C1
+					local ball = Instance.new("BallSocketConstraint", part0)
+					ball.Attachment0 = attach0
+					ball.Attachment1 = attach1
+					ball.LimitsEnabled = true
+					ball.UpperAngle = 10
+					v:Destroy()
+				elseif v:IsA("BasePart") then
+					v.CanCollide = true
+				end
+			end
+			char.Head.CanCollide = true
+			
+			if plr.Team == Teams.Black then --Subtracts one from the team value when a player dies
+				Storage.BlackLeft.Value -= 1
+			elseif plr.Team == Teams.Blue then
+				Storage.BlueLeft.Value -= 1
+			elseif plr.Team == Teams.Red then
+				Storage.RedLeft.Value -= 1
+			end
+		end)
+	end)
+end)
+
+local Replicated = game:GetService("ReplicatedStorage") --Switches teams when a player clicks on it's team name
+
+Replicated.SwitchTeam.OnServerEvent:Connect(function(plr, team)
+	if #team:GetPlayers() < 5 then
+		plr.Team = team
+	end
+end)
