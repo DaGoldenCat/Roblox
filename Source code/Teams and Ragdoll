@@ -46,8 +46,6 @@ Players.PlayerAdded:Connect(function(plr)
 					ball.LimitsEnabled = true
 					ball.UpperAngle = 10
 					v:Destroy()
-				elseif v:IsA("BasePart") then
-					v.CanCollide = true
 				end
 			end
 			char.Head.CanCollide = true
