@@ -1,0 +1,91 @@
+--Made by DaGoldenCat, server script
+local space = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local Storage = game:GetService("ServerStorage")
+local Replicated = game:GetService("ReplicatedStorage")
+local Collection = game:GetService("CollectionService")
+local toolFolder = game:GetService("Workspace"):WaitForChild("Tools")
+local toolInfo = require(toolFolder.ToolInfo)
+
+local hands = {
+	["Dossier"] = CFrame.new(0, -.8, 0) * CFrame.Angles(math.rad(-90), math.rad(0), math.rad(0)),
+	["Cash"] = CFrame.new(0, -.5, 0) * CFrame.Angles(math.rad(-90), math.rad(0), math.rad(0)),
+	["Pistol"] = CFrame.new(0, -.8, 0) * CFrame.Angles(math.rad(-90), math.rad(0), math.rad(0)),
+	["Rifle"] = CFrame.new(0, -1.8, 0) * CFrame.Angles(math.rad(-90), math.rad(0), math.rad(0)),
+	["Shotgun"] = CFrame.new(0, -1.8, 0) * CFrame.Angles(math.rad(-90), math.rad(0), math.rad(0))
+}
+local invs = {
+	["Dossier"] = CFrame.new(0, -.2, .5) * CFrame.Angles(math.rad(90), math.rad(0), math.rad(0)),
+	["Cash"] = CFrame.new(0, -.1, .5) * CFrame.Angles(math.rad(90), math.rad(0), math.rad(0)),
+	["Pistol"] = CFrame.new(0, -.2, .5) * CFrame.Angles(math.rad(90), math.rad(0), math.rad(90)),
+	["Rifle"] = CFrame.new(0, -.2, .5) * CFrame.Angles(math.rad(90), math.rad(20), math.rad(90)),
+	["Shotgun"] = CFrame.new(0, -.2, .5) * CFrame.Angles(math.rad(90), math.rad(20), math.rad(90))
+}
+
+local function setTool(tool, cFrame, part0, pickingUp)
+	if pickingUp then
+		tool.CanCollide = false
+		tool.Parent = part0.Parent
+	else
+		tool.WeldConstraint.Part0 = nil
+	end
+	tool.CFrame = cFrame
+	tool.WeldConstraint.Part0 = part0
+end
+
+Replicated.PressedKey.OnServerEvent:Connect(function(plr, tool, offhand, input)
+	print(plr, tool, offhand, input)
+	if input == "Left" then
+		if tool == nil and offhand ~= nil then
+			setTool(offhand, plr.Character.RightHand.CFrame * hands[offhand.Name], plr.Character.RightHand, true)
+		elseif tool ~= nil then
+			if table.find(toolInfo.guns, tool.Name) ~= nil then
+				local barrel = tool.Position + tool.Barrel.Position
+				local pos = (offhand - barrel).Unit * 500
+				local params = RaycastParams.new()
+				params.FilterType = Enum.RaycastFilterType.Exclude
+				local exclude = Collection:GetTagged("Ignore")
+				table.insert(exclude, plr.Character)
+				params.FilterDescendantsInstances = exclude
+				local raycast = space:Raycast(barrel, pos, params)
+				if raycast then
+					local clone = Storage.BulletDent:Clone()
+					clone.Parent = workspace
+					clone.Position = raycast.Position
+					clone.WeldConstraint.Part0 = raycast.Instance
+					local part = raycast.Instance
+					local hit = raycast.Position
+					local humanoid = part.Parent:FindFirstChild("Humanoid") or part.Parent.Parent:FindFirstChild("Humanoid")
+					if humanoid ~= nil then
+						if part.Name == "Head" then
+							humanoid.Health -= toolInfo.gunDamage[tool.Name] * 2
+						else
+							humanoid.Health -= toolInfo.gunDamage[tool.Name]
+						end
+					end
+					print("Shot")
+				end
+			end
+		end
+	elseif input == "Tab" then
+
+	elseif input == "F" then
+		if tool ~= nil then
+			setTool(tool, plr.Character.LeftHand.CFrame * hands[tool.Name], plr.Character.LeftHand, false)
+		end
+		if offhand ~= nil then
+			setTool(offhand, plr.Character.RightHand.CFrame * hands[offhand.Name], plr.Character.RightHand, false)
+		end
+	elseif input == "Back" then
+		tool.WeldConstraint.Part0 = nil
+		tool.CanCollide = true
+		tool.Parent = toolFolder
+	elseif typeof(input) == "number" then
+		if tool ~= nil then
+			setTool(tool, plr.Character.UpperTorso.CFrame * invs[tool.Name] * CFrame.new(0, input/10-.1, 0), plr.Character.UpperTorso, false)
+		end
+		if offhand ~= nil then
+			setTool(offhand, plr.Character.RightHand.CFrame * hands[offhand.Name], plr.Character.RightHand, false)
+		end
+	end
+end)
