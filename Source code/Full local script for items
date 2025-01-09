@@ -1,3 +1,4 @@
+--Written my DaGoldenCat
 local space = game:GetService("Workspace")
 local Input = game:GetService("UserInputService")
 local Players = game:GetService("Players")
